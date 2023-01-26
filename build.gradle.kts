@@ -5,7 +5,7 @@ plugins {
     id("io.freefair.lombok") version "6.3.0"
 }
 
-group = "io.github.rephrasing"
+group = "io.github.rephrasing.sparkbase"
 version = "1.0.0"
 
 repositories {
