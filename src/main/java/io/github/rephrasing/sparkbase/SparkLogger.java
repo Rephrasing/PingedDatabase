@@ -8,14 +8,14 @@ public class SparkLogger extends Logger {
 
 
     protected SparkLogger() {
-        super("Ratabase", null);
+        super("SparkBase", null);
         setParent(Sparkbase.rawLogger);
         setLevel(Level.ALL);
     }
 
     @Override
     public void log(LogRecord record) {
-        record.setMessage("[Ratabase] " + record.getMessage());
+        record.setMessage("[Spark] " + record.getMessage());
         super.log(record);
     }
 }

@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 public class Sparkbase {
 
-    static final Logger rawLogger = Logger.getLogger("Ratabase");
+    static final Logger rawLogger = Logger.getLogger("SparkBase");
     private final SparkConnector ratabaseConnector;
     private static Sparkbase instance;
     static final SparkLogger logger = new SparkLogger();
@@ -45,7 +45,7 @@ public class Sparkbase {
      * @see Sparkbase#init(String)
      */
     public static Sparkbase getInstance() {
-        if (instance == null) throw new NoConnectionFoundException("You must init Ratabase before attempting to use it.");
+        if (instance == null) throw new NoConnectionFoundException("You must init Sparkbase before attempting to use it.");
         return instance;
     }
 
