@@ -8,7 +8,7 @@ import java.util.Set;
 public class SparkAdaptersHandler {
 
     private static SparkAdaptersHandler instance;
-    private final Set<SparkDataAdapter> registeredAdapters = new HashSet<>();
+    private final Set<SparkDataAdapter<?>> registeredAdapters = new HashSet<>();
 
     private SparkAdaptersHandler() {}
 
@@ -21,7 +21,7 @@ public class SparkAdaptersHandler {
      * Registers a {@link SparkDataAdapter}
      * @param adapter the adapter
      */
-    public void registerAdapter(SparkDataAdapter adapter) {
+    public void registerAdapter(SparkDataAdapter<?> adapter) {
         registeredAdapters.add(adapter);
     }
 
@@ -29,8 +29,8 @@ public class SparkAdaptersHandler {
      * Registers adapters one by one
      * @param adapters the adapters
      */
-    public void registerAdapters(SparkDataAdapter... adapters) {
-        for (SparkDataAdapter adapter : adapters) {
+    public void registerAdapters(SparkDataAdapter<?>... adapters) {
+        for (SparkDataAdapter<?> adapter : adapters) {
             registerAdapter(adapter);
         }
     }
@@ -42,8 +42,8 @@ public class SparkAdaptersHandler {
      * @param <T> the class type
      */
     public <T> Optional<SparkDataAdapter<T>> getRatabaseAdapter(Class<T> type) {
-        for (SparkDataAdapter adapter : registeredAdapters) {
-            if (adapter.getType() == type) return Optional.of(adapter);
+        for (SparkDataAdapter<?> adapter : registeredAdapters) {
+            if (adapter.getType() == type) return Optional.of((SparkDataAdapter<T>)adapter);
         }
         return Optional.empty();
     }

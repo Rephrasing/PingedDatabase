@@ -12,7 +12,6 @@ import org.bson.Document;
 
 import javax.annotation.CheckReturnValue;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -35,12 +34,14 @@ public class SparkCollection {
      */
     @CheckReturnValue
     public <T> VoidAction push(T instance, Class<T> type) {
-        return new VoidAction(() -> SparkAdaptersHandler.getInstance().getRatabaseAdapter(type).ifPresentOrElse(adapter -> {
+        return new VoidAction(() -> {
+            Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
+            if (!adapterOptional.isPresent())
+                throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
+            SparkDataAdapter<T> adapter = adapterOptional.get();
             Document document = adapter.serialize(instance);
             raw.insertOne(document);
-        }, () -> {
-            throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
-        }));
+        });
     }
 
 
@@ -54,16 +55,16 @@ public class SparkCollection {
     @CheckReturnValue
     public <T> VoidAction pushOrReplace(T instance, Class<T> type, Predicate<T> filter) {
         return new VoidAction(() -> {
-            SparkAdaptersHandler.getInstance().getRatabaseAdapter(type).ifPresentOrElse(adapter -> {
-                Document document = adapter.serialize(instance);
-                for (Document doc : raw.find()) {
-                    T deserialized = adapter.deserialize(document);
-                    if (filter.test(deserialized)) raw.deleteOne(doc);
-                }
-                raw.insertOne(document);
-            }, () -> {
+            Optional<SparkDataAdapter<T>> optionalAdapter = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
+            if (!optionalAdapter.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
-            });
+            SparkDataAdapter<T> adapter = optionalAdapter.get();
+            Document document = adapter.serialize(instance);
+            for (Document doc : raw.find()) {
+                T deserialized = adapter.deserialize(document);
+                if (filter.test(deserialized)) raw.deleteOne(doc);
+            }
+            raw.insertOne(document);
         });
     }
 
@@ -79,7 +80,7 @@ public class SparkCollection {
     public <T> Action<Optional<T>> pull(Class<T> type, Predicate<T> filter) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (adapterOptional.isEmpty())
+            if (!adapterOptional.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be deserialized.");
             for (Document document : raw.find()) {
                 T deserialized = adapterOptional.get().deserialize(document);
@@ -101,7 +102,7 @@ public class SparkCollection {
     public <T> Action<Boolean> drop(Predicate<Document> filter, Class<T> type) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (adapterOptional.isEmpty())
+            if (!adapterOptional.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be executed.");
             for (Document document : raw.find()) {
                 if (filter.test(document)) {
@@ -127,13 +128,15 @@ public class SparkCollection {
     @CheckReturnValue
     public <T> Action<Boolean> ifPresentOrElse(Class<T> type, Predicate<T> filter, Consumer<T> function, Runnable notFound) {
         return new Action<>(() -> {
-            AtomicBoolean success = new AtomicBoolean(false);
-            pull(type, filter).execute().ifPresentOrElse(present -> {
+            Optional<T> optionalT = pull(type, filter).execute();
+            if (optionalT.isPresent()) {
+                T present = optionalT.get();
                 function.accept(present);
                 pushOrReplace(present, type, filter).execute();
-                success.set(true);
-            }, notFound);
-            return success.get();
+                return true;
+            }
+            notFound.run();
+            return false;
         });
     }
 
