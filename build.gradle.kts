@@ -1,5 +1,6 @@
 plugins {
     `maven-publish`
+    `java-library`
     id("java")
     id("io.freefair.lombok") version "6.3.0"
 }
@@ -13,7 +14,8 @@ repositories {
 
 dependencies {
     implementation("org.mongodb:mongodb-driver-sync:4.8.2") // -> https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync
-    compileOnly("com.google.code.findbugs:jsr305:3.0.2") // -> https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2") // -> https://mvnrepository.com/artifact/com.google.code.findbugs/jsr30
+    api("org.mongodb:bson:4.8.2") // -> https://mvnrepository.com/artifact/org.mongodb/bson
 }
 
 publishing {
