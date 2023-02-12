@@ -20,6 +20,7 @@ public class SparkAdaptersHandler {
     public void registerAdapter(SparkDataAdapter<?> adapter) {
         if (Sparkbase.isInitialized()) throw new IllegalArgumentException("Cannot register adapters after sparkbase has already been initiated.");
         registeredAdapters.add(adapter);
+        Sparkbase.logger.info("Registered SparkAdapter [" + adapter.getClass().getSimpleName() + "] for type [" + adapter.getType().getSimpleName() + "]");
     }
 
     public void registerAdapters(SparkDataAdapter<?>... adapters) {
