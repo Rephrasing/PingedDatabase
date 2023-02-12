@@ -36,9 +36,11 @@ public class SparkCollection {
         if (!isTypeSerializable)
             throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a SparkDataAdapter. cannot be serialized.");
         Document document = Document.parse(handler.toJson(instance));
-        for (Document doc : raw.find()) {
-            T deserialized = handler.fromJson(doc.toJson(), type);
-            if (filter.test(deserialized)) raw.deleteOne(doc);
+        if (raw.countDocuments() != 0) {
+            for (Document doc : raw.find()) {
+                T deserialized = handler.fromJson(doc.toJson(), type);
+                if (filter.test(deserialized)) raw.deleteOne(doc);
+            }
         }
         raw.insertOne(document);
     }
@@ -49,9 +51,11 @@ public class SparkCollection {
         boolean isTypeSerializable = handler.isSerializableType(type);
         if (!isTypeSerializable)
             throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a SparkDataAdapter. Cannot be deserialized.");
-        for (Document document : raw.find()) {
-            T deserialized = handler.fromJson(document.toJson(), type);
-            if (filter.test(deserialized)) return Optional.of(deserialized);
+        if (raw.countDocuments() != 0) {
+            for (Document document : raw.find()) {
+                T deserialized = handler.fromJson(document.toJson(), type);
+                if (filter.test(deserialized)) return Optional.of(deserialized);
+            }
         }
         return Optional.empty();
     }
@@ -62,10 +66,12 @@ public class SparkCollection {
         boolean isTypeSerializable = handler.isSerializableType(type);
         if (!isTypeSerializable)
             throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a SparkDataAdapter. Cannot be executed.");
-        for (Document document : raw.find()) {
-            if (filter.test(handler.fromJson(document.toJson(), type))) {
-                raw.findOneAndDelete(document);
-                return true;
+        if (raw.countDocuments() != 0) {
+            for (Document document : raw.find()) {
+                if (filter.test(handler.fromJson(document.toJson(), type))) {
+                    raw.findOneAndDelete(document);
+                    return true;
+                }
             }
         }
         return false;
