@@ -6,10 +6,10 @@ import java.util.logging.Logger;
 
 public class SparkLogger extends Logger {
 
-
     protected SparkLogger() {
         super("SparkBase", null);
-        setParent(Sparkbase.rawLogger);
+        Logger rawLogger = Logger.getLogger("Sparkbase");
+        setParent(rawLogger);
         setLevel(Level.ALL);
     }
 

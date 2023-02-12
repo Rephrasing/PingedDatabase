@@ -1,13 +1,8 @@
 package io.github.rephrasing.sparkbase.adapters;
 
-import io.github.rephrasing.sparkbase.exceptions.EntryNotFoundException;
-import org.bson.Document;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonSerializer;
 
-public interface SparkDataAdapter<T> {
-
-    Document serialize(T object);
-    T deserialize(Document document) throws EntryNotFoundException;
+public interface SparkDataAdapter<T> extends JsonSerializer<T>, JsonDeserializer<T> {
     Class<T> getType();
-
-
 }
