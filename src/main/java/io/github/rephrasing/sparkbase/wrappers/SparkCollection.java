@@ -14,6 +14,7 @@ import javax.annotation.CheckReturnValue;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Represents MongoDB collection
@@ -36,7 +37,7 @@ public class SparkCollection {
     public <T> VoidAction push(T instance, Class<T> type) {
         return new VoidAction(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (!adapterOptional.isPresent())
+            if (adapterOptional.isEmpty())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
             SparkDataAdapter<T> adapter = adapterOptional.get();
             Document document = adapter.serialize(instance);
@@ -56,7 +57,7 @@ public class SparkCollection {
     public <T> VoidAction pushOrReplace(T instance, Class<T> type, Predicate<T> filter) {
         return new VoidAction(() -> {
             Optional<SparkDataAdapter<T>> optionalAdapter = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (!optionalAdapter.isPresent())
+            if (optionalAdapter.isEmpty())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
             SparkDataAdapter<T> adapter = optionalAdapter.get();
             Document document = adapter.serialize(instance);
@@ -80,7 +81,7 @@ public class SparkCollection {
     public <T> Action<Optional<T>> pull(Class<T> type, Predicate<T> filter) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (!adapterOptional.isPresent())
+            if (adapterOptional.isEmpty())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be deserialized.");
             for (Document document : raw.find()) {
                 T deserialized = adapterOptional.get().deserialize(document);
@@ -102,7 +103,7 @@ public class SparkCollection {
     public <T> Action<Boolean> drop(Predicate<Document> filter, Class<T> type) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (!adapterOptional.isPresent())
+            if (adapterOptional.isEmpty())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be executed.");
             for (Document document : raw.find()) {
                 if (filter.test(document)) {
@@ -119,23 +120,24 @@ public class SparkCollection {
      * This method retrieves an object using {@link Predicate} function, executes a {@link Consumer} function upon that retrieved object and finally push it back to the database.
      * @param type the object type
      * @param filter the Predicate function
-     * @param function the consumer function
-     * @param notFound a failsafe runnable, in case no objects were found.
-     * @return true if executed, false if the runnable was executed.
+     * @param executeIfPresent the consumer function
+     * @param executeIfNotFound a failsafe runnable, in case no objects were found.
+     * @return true if the consumer was executed, false otherwise.
      * @param <T> the object class type
      */
     @SneakyThrows
     @CheckReturnValue
-    public <T> Action<Boolean> ifPresentOrElse(Class<T> type, Predicate<T> filter, Consumer<T> function, Runnable notFound) {
+    public <T> Action<Boolean> ifPresentOrElse(Class<T> type, Predicate<T> filter, Consumer<T> executeIfPresent, Supplier<T> executeIfNotFound) {
         return new Action<>(() -> {
             Optional<T> optionalT = pull(type, filter).execute();
             if (optionalT.isPresent()) {
-                T present = optionalT.get();
-                function.accept(present);
-                pushOrReplace(present, type, filter).execute();
+                // is found
+                executeIfPresent.accept(optionalT.get());
+                pushOrReplace(optionalT.get(), type, filter).execute();
                 return true;
             }
-            notFound.run();
+            // is not found
+            pushOrReplace(executeIfNotFound.get(), type, filter).execute();
             return false;
         });
     }
