@@ -6,33 +6,19 @@ import io.github.rephrasing.sparkbase.adapters.SparkDataAdapter;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 
 public class SparkAdaptersHandler {
 
     @Getter(value = AccessLevel.PACKAGE)
-    private Gson gson;
-    private final Set<SparkDataAdapter<?>> registeredAdapters = new HashSet<>();
+    private final Gson gson;
 
-    SparkAdaptersHandler() {}
-
-    public void registerAdapter(SparkDataAdapter<?> adapter) {
-        if (Sparkbase.isInitialized()) throw new IllegalArgumentException("Cannot register adapters after sparkbase has already been initiated.");
-        registeredAdapters.add(adapter);
-        Sparkbase.logger.info("Registered SparkAdapter [" + adapter.getClass().getSimpleName() + "] for type [" + adapter.getType().getSimpleName() + "]");
+    SparkAdaptersHandler() {
+        this.gson = new GsonBuilder().serializeNulls().create();
     }
-
-    public void registerAdapters(SparkDataAdapter<?>... adapters) {
-        if (Sparkbase.isInitialized()) throw new IllegalArgumentException("Cannot register adapters after sparkbase has already been initiated.");
-        for (SparkDataAdapter<?> adapter : adapters) {
-            registerAdapter(adapter);
-        }
-    }
-
-    void init() {
+    SparkAdaptersHandler(SparkDataAdapter<?>... sparkDataAdapters) {
         GsonBuilder builder = new GsonBuilder().serializeNulls();
-        registeredAdapters.forEach(adapter -> builder.registerTypeAdapter(adapter.getType(), adapter));
+        Arrays.asList(sparkDataAdapters).forEach(adapter -> builder.registerTypeAdapter(adapter.getType(), adapter));
         this.gson = builder.create();
     }
 
