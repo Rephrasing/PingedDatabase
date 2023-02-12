@@ -37,7 +37,7 @@ public class SparkCollection {
     public <T> VoidAction push(T instance, Class<T> type) {
         return new VoidAction(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (adapterOptional.isEmpty())
+            if (!adapterOptional.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
             SparkDataAdapter<T> adapter = adapterOptional.get();
             Document document = adapter.serialize(instance);
@@ -57,7 +57,7 @@ public class SparkCollection {
     public <T> VoidAction pushOrReplace(T instance, Class<T> type, Predicate<T> filter) {
         return new VoidAction(() -> {
             Optional<SparkDataAdapter<T>> optionalAdapter = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (optionalAdapter.isEmpty())
+            if (!optionalAdapter.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" is not an implementation of BsonDocumented and does not have a RatabaseAdapter. Cannot be serialized.");
             SparkDataAdapter<T> adapter = optionalAdapter.get();
             Document document = adapter.serialize(instance);
@@ -81,7 +81,7 @@ public class SparkCollection {
     public <T> Action<Optional<T>> pull(Class<T> type, Predicate<T> filter) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (adapterOptional.isEmpty())
+            if (!adapterOptional.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be deserialized.");
             for (Document document : raw.find()) {
                 T deserialized = adapterOptional.get().deserialize(document);
@@ -103,7 +103,7 @@ public class SparkCollection {
     public <T> Action<Boolean> drop(Predicate<Document> filter, Class<T> type) {
         return new Action<>(() -> {
             Optional<SparkDataAdapter<T>> adapterOptional = SparkAdaptersHandler.getInstance().getRatabaseAdapter(type);
-            if (adapterOptional.isEmpty())
+            if (!adapterOptional.isPresent())
                 throw new IllegalArgumentException("Class type \"" + type.getSimpleName() + "\" does not have a RatabaseAdapter. Cannot be executed.");
             for (Document document : raw.find()) {
                 if (filter.test(document)) {
