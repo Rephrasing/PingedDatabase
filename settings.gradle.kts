@@ -1,2 +1,2 @@
-rootProject.name = "sparkbase"
+rootProject.name = "pingeddatabase"
 

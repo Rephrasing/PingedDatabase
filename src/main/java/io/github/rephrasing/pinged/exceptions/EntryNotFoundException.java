@@ -1,4 +1,4 @@
-package io.github.rephrasing.sparkbase.exceptions;
+package io.github.rephrasing.pinged.exceptions;
 
 import lombok.Getter;
 

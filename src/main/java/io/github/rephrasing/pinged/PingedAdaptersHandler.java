@@ -1,22 +1,22 @@
-package io.github.rephrasing.sparkbase;
+package io.github.rephrasing.pinged;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.github.rephrasing.sparkbase.adapters.SparkDataAdapter;
+import io.github.rephrasing.pinged.adapters.PingedDataAdapter;
 import lombok.AccessLevel;
 import lombok.Getter;
 
 import java.util.Arrays;
 
-public class SparkAdaptersHandler {
+public class PingedAdaptersHandler {
 
     @Getter(value = AccessLevel.PACKAGE)
     private final Gson gson;
 
-    SparkAdaptersHandler() {
+    PingedAdaptersHandler() {
         this.gson = new GsonBuilder().serializeNulls().create();
     }
-    SparkAdaptersHandler(SparkDataAdapter<?>... sparkDataAdapters) {
+    PingedAdaptersHandler(PingedDataAdapter<?>... sparkDataAdapters) {
         GsonBuilder builder = new GsonBuilder().serializeNulls();
         Arrays.asList(sparkDataAdapters).forEach(adapter -> builder.registerTypeAdapter(adapter.getType(), adapter));
         this.gson = builder.create();
